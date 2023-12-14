@@ -1,0 +1,291 @@
+/**************************************************************************
+This sketch was compiled by Casper McWilliam in Arduino IDE from a framework created by Dr. Derek Howell at Capilano University, including examples, Arduino libraries, and with assistance from ChatGPT.
+Each Arduino MEGA board ran this code to monitor voltage output and time for 5 microbial fuel cells, with three conditions total (3 boards, 15 cells).
+ **************************************************************************/
+
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_INA219.h>
+#include <SPI.h>
+#include <SD.h>
+#include <I2C_RTC.h>
+
+static DS3231 RTC;
+int hours,minutes,seconds,day,month,year;
+float get_voltage(int VoltL , int VoltH);
+
+
+File myFile;
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+// The pins for I2C are defined by the Wire-library. 
+// On an arduino UNO:       A4(SDA), A5(SCL)
+// On an arduino MEGA 2560: 20(SDA), 21(SCL)
+// On an arduino LEONARDO:   2(SDA),  3(SCL), ...
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+//#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display1(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+//Adafruit_SSD1306 display2(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET  );
+
+// Select I2C BUS
+// This function is called to change which BUS on the TCA9548A
+// commands will be sent to.
+void TCA9548A(uint8_t bus){
+  Wire.beginTransmission(0x70);  // TCA9548A address
+  Wire.write(1 << bus);          // send byte to select bus
+  Wire.endTransmission();
+  //Serial.print(bus);
+}
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  
+  
+  Serial.print("Initializing SD card...");
+  if (!SD.begin(4)) {
+    Serial.println("initialization failed!");
+    // Halt program if SD card doesn't initialize
+    while (1);
+  }
+  Serial.println("initialization done.");
+  // open the file. note that only one file can be open at a time,
+  // so you have to close this one before opening another.
+  myFile = SD.open("test.txt", FILE_WRITE);
+  // if the file opened okay, write to it:
+  if (myFile) {
+    Serial.print("Writing to test.txt...");
+    // Create the table header for data logging here so it is only done
+    // when the file is first opened in the setup
+    myFile.println("Cell 1 V , Cell 2 V , Cell 3 V , Cell 4 V , Cell 5 V , Time");
+    // close the file:
+    myFile.close();
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
+  }
+
+  // Start I2C communication with the Multiplexer
+  Wire.begin();
+  // Init OLED display on bus number 0 (display 1)
+  TCA9548A(0);
+  if(!display1.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  } 
+  // Clear the buffer
+  display1.clearDisplay();
+
+ 
+  // Write to OLED on bus number 2
+  TCA9548A(0);
+  display1.setTextSize(4);
+  display1.setTextColor(WHITE);
+  display1.setCursor(45, 3);
+  // Display static text
+  display1.println("1");
+  display1.display(); 
+  
+  
+  // Switch to BUS 5 for RTC
+  TCA9548A(5);
+  RTC.begin(); 
+          
+  Serial.print("Is Clock Running: ");
+    if (RTC.isRunning())
+    {
+        Serial.println("Yes");
+        switch (RTC.getWeek())
+        {
+            case 1: Serial.print("MON");
+            break;
+            case 2: Serial.print("TUE");
+            break;
+            case 3: Serial.print("WED");
+            break;
+            case 4: Serial.print("THU");
+            break;
+            case 5: Serial.print("FRI");
+            break;
+            case 6: Serial.print("SAT");
+            break;
+            case 7: Serial.print("SUN");
+            break;
+        }
+		Serial.print(" ");
+		
+		day=RTC.getDay();
+		month=RTC.getMonth();
+		year=RTC.getYear();
+
+		if(day<10)
+			Serial.print("0");
+
+		Serial.print(RTC.getDay());
+		Serial.print("-");
+		if(month<10)
+			Serial.print("0");
+		Serial.print(RTC.getMonth());
+		Serial.print("-");
+		Serial.print(RTC.getYear());
+		Serial.print(" ");
+		
+		hours = RTC.getHours();
+		minutes = RTC.getMinutes(); 
+		seconds = RTC.getSeconds();
+		
+		if(hours<10)
+			Serial.print("0");
+        Serial.print(hours);
+        Serial.print(":");
+		if(minutes<10)
+			Serial.print("0");
+        Serial.print(minutes);
+        Serial.print(":");
+		if(seconds<10)
+			Serial.print("0");
+        Serial.print(RTC.getSeconds());
+        Serial.print("");
+        if (RTC.getHourMode() == CLOCK_H12)
+        {
+            switch (RTC.getMeridiem())
+            {
+                case HOUR_AM:
+                    Serial.print(" AM");
+                    break;
+                case HOUR_PM:
+                    Serial.print(" PM");
+                    break;
+            }   
+        }
+        Serial.println();
+        delay(1000);
+    }       
+    else
+    {
+        delay(250);
+
+        Serial.println("No");
+        Serial.println("Setting Time");
+        //RTC.setHourMode(CLOCK_H12); //Comment if RTC PCF8563
+        RTC.setHourMode(CLOCK_H24);  
+        RTC.setDateTime(__DATE__, __TIME__);
+        RTC.updateWeek();           //Update Weekdaybased on new date.    
+        Serial.println("New Time Set");
+        Serial.print(__DATE__);
+        Serial.print(" ");
+        Serial.println(__TIME__);
+        RTC.startClock(); //Start the Clock;
+    }
+    delay(2000);
+}
+
+
+void loop(){
+
+  unsigned int i = 0;
+  float volt;  
+
+//check voltage for each fuel cell
+  for (int i = 0; i < 10; i+=2){
+    volt = get_voltage(i , i + 1); //retrieve voltage from get_voltage funciton (VoltValueF returned)
+    
+    //write value to SD card
+    myFile = SD.open("test.txt" , FILE_WRITE);
+    if (myFile) {
+      //Serial.print("found");
+      myFile.print(volt , 4); //print value to SD card
+      myFile.print(" , "); //separate values with a comma
+      myFile.close(); //if commented out, file does not close in between readings of each cell, only closes after time has been written to SD card
+    } else {
+    // if the file didn't open, print an error:
+      Serial.println("error opening test.txt");
+  }
+    Serial.print(volt); //print the voltage value
+    Serial.print(" Volts ");
+    Serial.print(" , ");
+}
+  //switch to RTC to get time 
+  
+  TCA9548A(5);
+  hours = RTC.getHours();
+	minutes = RTC.getMinutes(); 
+	seconds = RTC.getSeconds();    
+  
+  // open file to write data
+  myFile = SD.open("test.txt", FILE_WRITE);
+  // if the file opened okay, write to it:
+  if (myFile) {
+    Serial.println("Writing to test.txt...");
+   if(hours<10)
+			myFile.print("0");
+        myFile.print(hours);
+        myFile.print(":");
+		if(minutes<10)
+			myFile.print("0");
+        myFile.print(minutes);
+        myFile.print(":");
+		if(seconds<10)
+			myFile.print("0");
+        myFile.print(seconds);
+        myFile.print(", ");
+    myFile.println(); //insert line break after voltages and time have been printed
+    // close the file:
+    myFile.close();
+    //Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+      Serial.println("error opening test.txt");
+  }
+
+  //send to display
+  TCA9548A(0);
+    display1.clearDisplay();
+    display1.setTextSize(2);
+    display1.setCursor(2, 2);
+    display1.println("Voltage");
+    display1.print(volt);
+    display1.println(" V");
+    display1.display();
+
+  // Wait 2 seconds before making another reading
+  delay(2000);
+
+}
+  
+  
+  float get_voltage(int VoltL , int VoltH) {
+     // Read Voltage difference across two analog inputs.
+    unsigned int x=0;
+    float VoltHValue=0.0,VH_Samples=0.0,AvgVoltH=0.0,VoltValueF=0.0;
+    float VoltLValue=0.0,VL_Samples=0.0,AvgVoltL=0.0;
+    //Serial.print(VoltL);
+    //Serial.print(" , ");
+    //Serial.print(VoltH);
+    for (int x = 0; x < 1; x++){ //Get 1 sample
+      VoltHValue = analogRead(VoltL);   //Read voltage value
+      VH_Samples = VH_Samples + VoltHValue;    //Add voltage samples together
+      VoltLValue = analogRead(VoltH);   //Read voltage value
+      VL_Samples = VL_Samples + VoltLValue;    //Add voltage samples together
+      delay (3); // let ADC settle before next sample 3ms
+    }
+    AvgVoltH=VH_Samples;  //Taking Average of Volt Samples (in place because originally, more samples were taken)
+    AvgVoltL=VL_Samples;  //Taking Average of Volt Samples
+    VoltValueF = (AvgVoltH - AvgVoltL) * (5.0/1023.0);
+    //Serial.print(VoltValueF , 3);
+    //Serial.print(" Volts ");
+
+    return VoltValueF;
+  }
+   
+
+  
+
