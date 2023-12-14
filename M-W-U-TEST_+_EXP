@@ -1,0 +1,11 @@
+# This code was used to conduct a Mann-Whitney U Test in Replit between the positive control and experimental conditions' voltage data
+
+import scipy
+from scipy import stats
+
+pos_control = [0.0132, 0.0088, 0.0069, 0.0060, 0.0125]
+exp = [0.0081, 0.0044, 0.0090, 0.0091, 0.0052]
+
+print(scipy.stats.mannwhitneyu(pos_control, exp, alternative='two-sided', axis=0, method='exact', nan_policy='raise'))
+
+# Result yielded: MannwhitneyuResult(statistic=17.0, pvalue=0.42063492063492064)
