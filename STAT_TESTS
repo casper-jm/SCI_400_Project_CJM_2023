@@ -8,4 +8,12 @@ exp = [0.0081, 0.0044, 0.0090, 0.0091, 0.0052]
 
 print(scipy.stats.mannwhitneyu(pos_control, exp, alternative='two-sided', axis=0, method='exact', nan_policy='raise'))
 
-# Result yielded: MannwhitneyuResult(statistic=17.0, pvalue=0.42063492063492064)
+# Result: MannwhitneyuResult(statistic=17.0, pvalue=0.42063492063492064)
+
+print(scipy.stats.shapiro(pos_control))
+
+#Result: ShapiroResult(statistic=0.8927419185638428, pvalue=0.37107887864112854)
+
+print(scipy.stats.shapiro(exp))
+
+#Result: ShapiroResult(statistic=0.8377517461776733, pvalue=0.15880271792411804)
