@@ -1,19 +1,44 @@
-# This code was used to conduct a Mann-Whitney U Test in Replit between the positive control and experimental conditions' voltage data
+# This code was created using statistical functions from the SciPy v1.11.4 Manual (https://docs.scipy.org/doc/scipy/reference/stats.html)
 
 import scipy
 from scipy import stats
 
+# MFC average voltage (V) for all 5 cells in each condition 
+
 pos_control = [0.0132, 0.0088, 0.0069, 0.0060, 0.0125]
 exp = [0.0081, 0.0044, 0.0090, 0.0091, 0.0052]
+neg_control = [-0.3775, 0.0059, 0.0044, 0.0087, 0.0125]
 
-print(scipy.stats.mannwhitneyu(pos_control, exp, alternative='two-sided', axis=0, method='exact', nan_policy='raise'))
 
-# Result: MannwhitneyuResult(statistic=17.0, pvalue=0.42063492063492064)
+# Shapiro-Wilk tests for normality
+
+print(scipy.stats.shapiro(neg_control))
+
+# Result: ShapiroResult(statistic=0.5698702335357666, pvalue=0.00023907348804641515)
+# pvalue < 0.05 therefore not normally distributed
 
 print(scipy.stats.shapiro(pos_control))
 
-#Result: ShapiroResult(statistic=0.8927419185638428, pvalue=0.37107887864112854)
+# Result: ShapiroResult(statistic=0.8927419185638428, pvalue=0.37107887864112854)
+# pvalue > 0.05 therefore normally distributed
 
 print(scipy.stats.shapiro(exp))
 
-#Result: ShapiroResult(statistic=0.8377517461776733, pvalue=0.15880271792411804)
+# Result: ShapiroResult(statistic=0.8377517461776733, pvalue=0.15880271792411804)
+# pvalue > 0.05 therefore normally distributed
+
+
+# T-test for positive control and experimental conditions (normally distribution)
+
+print(scipy.stats.ttest_ind(pos_control, exp, equal_var=False))
+
+# Result: TtestResult(statistic=1.32108511779391, pvalue=0.22775776593826624, df=7.045991913581014)
+# pvalue > 0.05 therefore sample means are not significantly different
+
+
+# Kruskal-Wallis test for all three conditions (non-normal distribution)
+
+print(scipy.stats.kruskal(pos_control, exp, neg_control))
+
+# Result: KruskalResult(statistic=2.2028673835125523, pvalue=0.3323941911096516)
+# pvalue > 0.05 therefore sample means are not significantly different
