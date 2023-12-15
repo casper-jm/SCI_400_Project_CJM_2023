@@ -10,7 +10,7 @@ exp = [0.0081, 0.0044, 0.0090, 0.0091, 0.0052]
 neg_control = [-0.3775, 0.0059, 0.0044, 0.0087, 0.0125]
 neg_control_2 = [0.0059, 0.0044, 0.0087, 0.0125] # Removed outlier (cell 1)
 
-# Shapiro-Wilk tests for normality
+### Shapiro-Wilk tests for normality ###
 
 print(scipy.stats.shapiro(pos_control))
 
@@ -27,8 +27,13 @@ print(scipy.stats.shapiro(neg_control))
 # Result: ShapiroResult(statistic=0.5698702335357666, pvalue=0.00023907348804641515)
 # pvalue < 0.05 therefore not normally distributed
 
+print(scipy.stats.shapiro(neg_control_2))
 
-# T-test for positive control and experimental conditions (normally distribution)
+# Result: ShapiroResult(statistic=0.9564899802207947, pvalue=0.7568213939666748)
+# pvalue > 0.05 therefore normally distributed
+
+
+### T-test for positive control and experimental conditions (normally distribution) ###
 
 print(scipy.stats.ttest_ind(pos_control, exp, equal_var=False))
 
@@ -36,14 +41,17 @@ print(scipy.stats.ttest_ind(pos_control, exp, equal_var=False))
 # pvalue > 0.05 therefore sample means are not significantly different
 
 
-# Kruskal-Wallis test for all three conditions (non-normal distribution)
+### Kruskal-Wallis test for all three conditions (non-normal distribution) ###
 
 print(scipy.stats.kruskal(pos_control, exp, neg_control))
 
 # Result: KruskalResult(statistic=2.2028673835125523, pvalue=0.3323941911096516)
 # pvalue > 0.05 therefore sample means are not significantly different
 
-print(scipy.stats.shapiro(neg_control_2))
 
-# Result: ShapiroResult(statistic=0.9564899802207947, pvalue=0.7568213939666748)
-# pvalue > 0.05 therefore normally distributed
+### One-way ANOVA for all three conditions (minus negative control cell 1) (normal distribution) ###
+
+print(scipy.stats.f_oneway(pos_control, exp, neg_control))
+
+# Result: F_onewayResult(statistic=1.0114111043198417, pvalue=0.39271266692511686)
+# pvalue > 0.05 therefore sample means are not significantly different
