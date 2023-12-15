@@ -12,11 +12,6 @@ neg_control = [-0.3775, 0.0059, 0.0044, 0.0087, 0.0125]
 
 # Shapiro-Wilk tests for normality
 
-print(scipy.stats.shapiro(neg_control))
-
-# Result: ShapiroResult(statistic=0.5698702335357666, pvalue=0.00023907348804641515)
-# pvalue < 0.05 therefore not normally distributed
-
 print(scipy.stats.shapiro(pos_control))
 
 # Result: ShapiroResult(statistic=0.8927419185638428, pvalue=0.37107887864112854)
@@ -26,6 +21,11 @@ print(scipy.stats.shapiro(exp))
 
 # Result: ShapiroResult(statistic=0.8377517461776733, pvalue=0.15880271792411804)
 # pvalue > 0.05 therefore normally distributed
+
+print(scipy.stats.shapiro(neg_control))
+
+# Result: ShapiroResult(statistic=0.5698702335357666, pvalue=0.00023907348804641515)
+# pvalue < 0.05 therefore not normally distributed
 
 
 # T-test for positive control and experimental conditions (normally distribution)
